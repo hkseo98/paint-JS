@@ -18,7 +18,7 @@ let backColor = "white";
 var mouse = { x: 0, y: 0 };
 var previous = { x: 0, y: 0 };
 
-const CANVAS__SIZE = 700;
+const CANVAS__SIZE = 550;
 const DEFAULT__COLOR = "#2c2c2c";
 canvas.width = CANVAS__SIZE; // 실제 픽셀 사이즈를 줘야함
 canvas.height = CANVAS__SIZE;

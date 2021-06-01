@@ -11,8 +11,8 @@ body {
 }
 
 .canvas {
-  width: 700px;
-  height: 700px;
+  width: 550px;
+  height: 550px;
   background-color: white;
   border-radius: 15px;
   box-shadow: 6px 3px 11px -1px rgba(0, 0, 0, 0.42);
