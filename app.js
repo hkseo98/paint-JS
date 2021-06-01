@@ -5,14 +5,24 @@ const clear = document.getElementById("jsClear");
 const mode = document.getElementById("jsMode");
 const saveBtn = document.getElementById("jsSave");
 const currentColor = document.getElementById("current__color");
+const back = document.getElementById("back_btn");
 
 const ctx = canvas.getContext("2d");
+
+let pathsry = [];
+let points = [];
+let backColor = "white";
+
+var mouse = { x: 0, y: 0 };
+var previous = { x: 0, y: 0 };
 
 const CANVAS__SIZE = 700;
 const DEFAULT__COLOR = "#2c2c2c";
 canvas.width = CANVAS__SIZE; // 실제 픽셀 사이즈를 줘야함
 canvas.height = CANVAS__SIZE;
 
+ctx.lineJoin = "round";
+ctx.lineCap = "round";
 ctx.fillStyle = "white";
 ctx.fillRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
 ctx.strokeStyle = DEFAULT__COLOR;
@@ -21,24 +31,38 @@ ctx.fillStyle = DEFAULT__COLOR;
 
 let on = false;
 let modes = "Draw";
+let Redo = [];
+
+function Undo() {
+  // remove the last path from the paths array
+  // console.log(pathsry);
+  Redo.push(pathsry.pop());
+  console.log(Redo);
+  // draw all the paths in the paths array
+  drawPaths();
+}
 
 function onMouseMove(event) {
-  const x = event.offsetX;
-  const y = event.offsetY;
   if (modes == "Draw") {
     if (!on) {
       ctx.beginPath();
-      ctx.moveTo(x, y);
     } else {
-      ctx.lineTo(x, y);
+      previous = { x: mouse.x, y: mouse.y };
+      mouse = { x: event.offsetX, y: event.offsetY };
+      points.push({ x: mouse.x, y: mouse.y });
+      ctx.moveTo(previous.x, previous.y);
+      ctx.lineTo(mouse.x, mouse.y);
       ctx.stroke();
     }
   } else if (modes == "Spread") {
     if (!on) {
       ctx.beginPath();
-      ctx.moveTo(x, y);
+      previous = { x: event.offsetX, y: event.offsetY };
+      ctx.moveTo(previous.x, previous.y);
     } else {
-      ctx.lineTo(x, y);
+      mouse = { x: event.offsetX, y: event.offsetY };
+      points.push({ x: mouse.x, y: mouse.y });
+      ctx.lineTo(mouse.x, mouse.y);
       ctx.stroke();
       ctx.closePath();
     }
@@ -47,10 +71,17 @@ function onMouseMove(event) {
 
 function startPainting(event) {
   on = true;
-  event;
+  previous = { x: mouse.x, y: mouse.y };
+  mouse = { x: event.offsetX, y: event.offsetY };
+  points = [];
+  points.push({ x: mouse.x, y: mouse.y });
 }
+
 function stopPainting(event) {
-  on = false;
+  if (modes == "Draw" || modes == "Spread") {
+    on = false;
+    pathsry.push([points, ctx.strokeStyle, modes]);
+  }
 }
 
 function changeColor(event) {
@@ -67,13 +98,14 @@ function rangeChange(event) {
 
 function onClear(event) {
   ctx.clearRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
+  pathsry = [];
 }
 
 function changeMode() {
   if (modes == "Draw") {
     modes = "Paint";
     mode.innerText = "Paint";
-  } else if ("Paint") {
+  } else if (modes == "Paint") {
     modes = "Spread";
     mode.innerText = "Spread";
   } else {
@@ -86,6 +118,7 @@ function clickCanvas(event) {
   if (modes == "Paint") {
     ctx.fillRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
   }
+  console.log(pathsry);
 }
 
 function handleCM(event) {
@@ -101,10 +134,52 @@ function handleSave() {
   //   console.log(link);
 }
 
+function drawPaths() {
+  // delete everything
+  ctx.clearRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
+  // draw all the paths in the paths array
+  pathsry.forEach((path) => {
+    if (path[2] == "Draw") {
+      ctx.strokeStyle = path[1];
+      ctx.beginPath();
+      if (path[0][0].x) {
+        ctx.moveTo(path[0][0].x, path[0][0].y);
+        for (let i = 1; i < path[0].length; i++) {
+          ctx.lineTo(path[0][i].x, path[0][i].y);
+        }
+        ctx.stroke();
+      }
+    } else if (path[2] == "Spread") {
+      ctx.strokeStyle = path[1];
+      ctx.beginPath();
+      if (path[0][0].x) {
+        ctx.moveTo(path[0][0].x, path[0][0].y);
+        for (let i = 1; i < path[0].length; i++) {
+          ctx.lineTo(path[0][i].x, path[0][i].y);
+          ctx.stroke();
+          ctx.closePath();
+        }
+      }
+    } else {
+      ctx.fillStyle = path[1];
+      ctx.fillRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
+    }
+  });
+}
+
+function leaveCanvas() {
+  if (on) {
+    on = false;
+    pathsry.push([points, ctx.strokeStyle, modes]);
+  } else {
+    on = false;
+  }
+}
+
 if (canvas) {
   canvas.addEventListener("mousemove", onMouseMove);
   canvas.addEventListener("mousedown", startPainting);
-  canvas.addEventListener("mouseleave", stopPainting);
+  canvas.addEventListener("mouseleave", leaveCanvas);
   canvas.addEventListener("mouseup", stopPainting);
   canvas.addEventListener("click", clickCanvas);
   canvas.addEventListener("contextmenu", handleCM);
@@ -136,4 +211,8 @@ if (saveBtn) {
 if (currentColor) {
   console.log(currentColor.style.backgroundColor);
   // currentColor.addEventListener()
+}
+
+if (back) {
+  back.addEventListener("click", Undo);
 }
