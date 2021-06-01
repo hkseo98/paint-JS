@@ -6,6 +6,8 @@ const mode = document.getElementById("jsMode");
 const saveBtn = document.getElementById("jsSave");
 const currentColor = document.getElementById("current__color");
 const back = document.getElementById("back_btn");
+const redo = document.getElementById("redo_btn");
+const image__name = document.getElementById("image_name");
 
 const ctx = canvas.getContext("2d");
 
@@ -31,15 +33,28 @@ ctx.fillStyle = DEFAULT__COLOR;
 
 let on = false;
 let modes = "Draw";
-let Redo = [];
+let arrayForRedo = [];
+let imageName = "";
+
+function onImageName(event) {
+  imageName = event.target.value;
+}
 
 function Undo() {
   // remove the last path from the paths array
   // console.log(pathsry);
-  Redo.push(pathsry.pop());
-  console.log(Redo);
+  arrayForRedo.push(pathsry.pop());
+  console.log(arrayForRedo);
   // draw all the paths in the paths array
   drawPaths();
+}
+
+function Redo() {
+  let re = arrayForRedo.pop();
+  if (re) {
+    pathsry.push(re);
+    drawPaths();
+  }
 }
 
 function onMouseMove(event) {
@@ -80,7 +95,8 @@ function startPainting(event) {
 function stopPainting(event) {
   if (modes == "Draw" || modes == "Spread") {
     on = false;
-    pathsry.push([points, ctx.strokeStyle, modes]);
+    pathsry.push([points, ctx.strokeStyle, modes, ctx.lineWidth]);
+    arrayForRedo = [];
   }
 }
 
@@ -99,6 +115,7 @@ function rangeChange(event) {
 function onClear(event) {
   ctx.clearRect(0, 0, CANVAS__SIZE, CANVAS__SIZE);
   pathsry = [];
+  arrayForRedo = [];
 }
 
 function changeMode() {
@@ -129,9 +146,9 @@ function handleSave() {
   const image = canvas.toDataURL();
   const link = document.createElement("a");
   link.href = image;
-  link.download = "image1/png";
+  link.download = imageName;
   link.click();
-  //   console.log(link);
+  image__name.value = "";
 }
 
 function drawPaths() {
@@ -141,6 +158,7 @@ function drawPaths() {
   pathsry.forEach((path) => {
     if (path[2] == "Draw") {
       ctx.strokeStyle = path[1];
+      ctx.lineWidth = path[3];
       ctx.beginPath();
       if (path[0][0].x) {
         ctx.moveTo(path[0][0].x, path[0][0].y);
@@ -151,6 +169,7 @@ function drawPaths() {
       }
     } else if (path[2] == "Spread") {
       ctx.strokeStyle = path[1];
+      ctx.lineWidth = path[3];
       ctx.beginPath();
       if (path[0][0].x) {
         ctx.moveTo(path[0][0].x, path[0][0].y);
@@ -171,6 +190,7 @@ function leaveCanvas() {
   if (on) {
     on = false;
     pathsry.push([points, ctx.strokeStyle, modes]);
+    arrayForRedo = [];
   } else {
     on = false;
   }
@@ -215,4 +235,12 @@ if (currentColor) {
 
 if (back) {
   back.addEventListener("click", Undo);
+}
+
+if (redo) {
+  redo.addEventListener("click", Redo);
+}
+
+if (image__name) {
+  image__name.addEventListener("input", onImageName);
 }
